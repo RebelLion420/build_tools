@@ -1,0 +1,37 @@
+#!/bin/bash
+red='\e[1;5;31m'
+reset='\e[0m'
+if [ -e $4 ]; then
+    t=$4
+else
+    t=$(($(nproc --all) + 1))
+fi
+if [ -z "$*" ]; then
+    echo -e "\t${red}Usage:\n\tbld lineage bacon userdebug [# threads]$reset"
+elif [ -z $1 ]; then
+    echo -e "\t${red}Specify target!\n\te.g. "lineage"$reset"
+    sleep 1
+elif [ -z $2 ]; then
+    echo -e "\t${red}Specify target device!\n\te.g. "bacon"$reset"
+elif [ -z $3 ]; then
+    echo -e "\t${red}Specify build variant!\n\te.g. "userdebug"$reset"
+else
+    if [[ -f buildlog.txt || -f errors.txt ]]; then
+        rm -f buildlog.txt errors.txt
+    fi
+    echo "Setting up build environment..."
+    . build/envsetup.sh
+    lunch ${1}_${2}-${3}
+    make -j$t bacon 2>&1 | tee buildlog.txt
+    if [ ${PIPESTATUS[0]} -ne 0 ]; then
+        grep -iE 'fatal|fail|failed|error' buildlog.txt &> errors.txt
+	echo -e "\n${red}Errors saved to 'errors.txt'$reset"
+        if command -v deldog &>/dev/null 2>&1; then
+            read -p "Upload build log to dogbin? " yn
+	    if [[ "${yn,,}" =~ ^(y|yes)$ ]]; then
+		source deldog
+	        deldog buildlog.txt && echo -e "Build log uploaded\n"
+	    fi
+	fi
+    fi
+fi
