@@ -6,10 +6,11 @@ green='\e[1;32m'
 white='\e[1;97m'
 reset='\e[0m'
 echorun () { echo -e "\n$green\$ $*$reset" ; "$@" ; }
-
 #
 # Shortcuts
 #
+alias vim=nvim
+alias reload='source ~/.bashrc'
 alias ls='ls -F --color=always --group-directories-first'
 alias export64='echorun export ARCH=arm64 && export SUBARCH=$ARCH && export CROSS_COMPILE=~/toolchain/bin/aarch64-linux-gnu-'
 alias kclean='echorun make clean && make mrproper && rm -rf ~/kernel_out && mkdir -p ~/kernel_out/modinstall'
@@ -18,16 +19,16 @@ alias repopull='echorun repo sync -cq -j$(nproc --all) --force-sync --no-tags --
 alias filterlog="grep -iE 'crash|error|fail|failed|fatal|missing|not found| W | D | E ' buildlog.txt &> errors.txt"
 alias bmake='mka -j$(nproc --all) bootimage 2>&1 | tee buildlog.txt && filterlog'
 alias rmake='mka -j$(nproc --all) recoveryimage 2>&1 | tee buildlog.txt && filterlog'
-alias vim=nvim
-alias reload='source ~/.bashrc'
-
+alias synceach='echo "" ; for d in ./*/ ; do (cd "$d" && echo -e "* $(basename "`pwd`")" && git reset --hard HEAD && git clean -fd && git pull && echo "" || exit 1) ; done || echo -e "Error occured.\n"'
+alias gstart='gcloud compute instances start'
+alias gstop='gcloud compute instances stop'
+alias glist='gcloud compute instances list'
 #
 # Git Aliases
 #
 alias git=hub
 alias gl='git log --color --decorate --oneline --graph'
 alias gd='git diff -w --color'
-
 #
 # Directory Navigation
 #
@@ -35,7 +36,6 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
-
 #
 # Custom Commands
 #
@@ -93,7 +93,7 @@ gitcont () {
 	if [[ $2 == "empty" ]]; then
 		git reset --quiet
 	else
-		git add .
+		git add -A
 	fi
 	case $1 in
 		"pick") GIT_EDITOR=true git cherry-pick --continue ;;
@@ -142,30 +142,4 @@ dirsize ()
 	egrep '^ *[0-9.]*M' /tmp/list
 	egrep '^ *[0-9.]*G' /tmp/list
 	rm -rf /tmp/list
-}
-# Creates xz or lrzip compressed archives with progress bar based on total size of files.
-# lrzip is resource-intensive and can max out all cores. Use this with caution.
-tarz() {
-	if [[ $# -le 1 ]]; then
-		echo -e "\n${red}Missing Arguments!\n\nUsage:\n\t${white}tarz [xz|lrzip] ~/in_dir out_name${reset}\n"
-		kill -INT ${$}
-	fi
-	SIZE=`du -sb ${2}|awk '{print $1}'`
-	HSIZE=`numfmt --to=iec --suffix=B --padding=6 ${SIZE}`
-	NAME=${3}
-	echo -e "${green}Total backup size is ${red}${HSIZE}"
-	read -p $'\e[1;32mContinue? y/n\e[0m ' yn
-	if [ "${yn}" == "y" ]; then
-		if [ "${1}" == "xz" ]; then
-			echo -e "${green}Creating archive with xz...${reset}"
-			tar --dereference --hard-dereference -cf - -C ${2} .|pv -N "Total${HSIZE}" -W -F '%N %t %r %p %e' -s ${SIZE}k|xz -T 0 > ${NAME}.tar.xz && { echo -e "${green}Backup Complete.${reset}" && return 0 ; } || { echo -e "${red}ERROR. Backup failed.${reset}" && return 1 ; }
-		elif [ "${1}" == "lrzip" ]; then
-			command -v lrzip >/dev/null 2>&1 || { echo -e >&2 "${red}lrzip not installed!" && return 1; }
-			tar --dereference --hard-dereference -cf - -C ${2} .|pv -N "Total${HSIZE}" -W -F '%N %t %r %p %e' -s ${SIZE}k|lrzip -p $(($(nproc --all) + 1)) -o ${NAME}.tar.lrz && { echo -e "${green}Backup Complete.${reset}" && return 0 ; } || { echo -e "${red}ERROR. Backup failed.${reset}" && return 1 ; }
-		else
-			echo -e "${red}Wrong argument! specify xz or lrz.${reset}"
-			return 1
-			kill -INT ${$}
-		fi
-	fi
 }
