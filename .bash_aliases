@@ -10,8 +10,9 @@ echorun () { echo -e "\n$green\$ $*$reset" ; "$@" ; }
 # Shortcuts
 #
 alias vim=nvim
-alias reload='source ~/.bashrc'
+alias reload='source ~/.bash_profile||source ~/.bashrc'
 alias ls='ls -F --color=always --group-directories-first'
+alias lsa='ls -AR -I ".git" -I ".repo"'
 alias export64='echorun export ARCH=arm64 && export SUBARCH=$ARCH && export CROSS_COMPILE=~/toolchain/bin/aarch64-linux-gnu-'
 alias kclean='echorun make clean && make mrproper && rm -rf ~/kernel_out && mkdir -p ~/kernel_out/modinstall'
 alias sysclean='echorun rm -rf out/target/product/perry/system out/target/product/perry/*.zip* out/target/product/perry/*.img'
@@ -23,6 +24,7 @@ alias synceach='echo "" ; for d in ./*/ ; do (cd "$d" && echo -e "* $(basename "
 alias gstart='gcloud compute instances start'
 alias gstop='gcloud compute instances stop'
 alias glist='gcloud compute instances list'
+alias cibuild='trigger_build.bash RebelLion420 kernel_perry'
 #
 # Git Aliases
 #
@@ -36,6 +38,15 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
+#
+# MEGATools
+#
+if command -v megatools &>/dev/null; then
+    alias megaget='megatools get'
+    alias megaput='megatools put'
+    alias megals='megatools ls'
+    alias megarm='megatools rm'
+fi
 #
 # Custom Commands
 #
