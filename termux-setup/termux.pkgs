@@ -1,0 +1,15 @@
+bsdtar
+curl
+git-lfs
+gnupg
+hub
+mosh
+nano
+ncurses
+ncurses-utils
+neovim
+proot
+tergent
+tmux
+unzip
+zip
