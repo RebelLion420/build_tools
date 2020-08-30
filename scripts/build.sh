@@ -200,8 +200,8 @@ printf "\n%s" "${top}"
 fargs "ARCHITECTURE:" "${arch}"
 fargs "DEVICE:" "${device}"
 fargs "THREADS:" "${threads}"
-[[ -n ${var+type} ]] && fargs "type:" "${type}"
-[[ -n ${var+version} ]] && fargs "version:" "${version}"
+[[ -z ${var+type} ]] && fargs "TYPE:" "${type}"
+[[ -z ${var+version} ]] && fargs "VERSION:" "${version}"
 fargs "GCC VERSION:" "${gccv}"
 printf "\n%s\n" "${mid}${rst}"
 printf "${mid}%5s${grn}%-25s ${cyn}%s\n${end}\n${rst}" "" "Build script by " "RebelLion420"
@@ -263,7 +263,7 @@ fi
 #
 # Upload to MEGA
 #
-if command -v megaput >/dev/null 2>&1 && [[ -f ${final} ]]; then
+if command -v megaput >/dev/null 2>&1 || command -v megatools >/dev/null 2>&1 && [[ -f ${final} ]]; then
 	echo ""
 	read -rp "Upload kernel zip to MEGA?  " ul
 	if [ "${ul,,}" == "y" ]; then
