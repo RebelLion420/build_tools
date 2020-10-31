@@ -19,6 +19,7 @@ kernrel=/Root/RK/Release
 kdir="${PWD}"
 ak3="${kdir}"/AK3
 out="${kdir}"/out
+kernels="${kdir}"/../kernels
 #
 # Colors
 #
@@ -137,6 +138,7 @@ shift $((OPTIND - 1))
 [[ -f "${kdir}"/.errors ]] && rm -f "${kdir}"/.errors "${kdir}"/.errorlog
 [[ ! -d "${out}" ]] && mkdir "${out}"
 [[ ! -d "${HOME}"/.local/tmp ]] && mkdir "${HOME}"/.local/tmp
+[[ ! -d "${kernels}" ]] && mkdir "${kernels}"
 #
 # Preconfigured Variables
 #
@@ -189,9 +191,10 @@ if command -v ccache >/dev/null 2>&1; then
 	export CCACHE_SLOPPINESS=file_macro,locale,time_macros,pch_defines
 	export CFLAGS="-fpch-preprocess"
 	export CPPFLAGS="-fpch-preprocess"
+    export PATH="/usr/lib/ccache/bin/:$PATH"
 fi
 # Checksum
-[[ -f "${tmp}"/defconfsha ]] && defconfsha=$(awk '{print $1}' "${tmp}"/defconfsha)
+[[ -f "${out}"/defconfsha ]] && defconfsha=$(awk '{print $1}' "${out}"/defconfsha)
 #
 # Begin Build Process
 #
@@ -200,24 +203,26 @@ printf "\n%s" "${top}"
 fargs "ARCHITECTURE:" "${arch}"
 fargs "DEVICE:" "${device}"
 fargs "THREADS:" "${threads}"
-[[ -z ${var+type} ]] && fargs "TYPE:" "${type}"
-[[ -z ${var+version} ]] && fargs "VERSION:" "${version}"
+[ ! -z ${type} ] && fargs "TYPE:" "${type}"
+[ ! -z ${version} ] && fargs "VERSION:" "${version}"
 fargs "GCC VERSION:" "${gccv}"
 printf "\n%s\n" "${mid}${rst}"
 printf "${mid}%5s${grn}%-25s ${cyn}%s\n${end}\n${rst}" "" "Build script by " "RebelLion420"
 sleep 1
 fmsg "Building Kernel Image"
-if [[ -n ${defconfsha+x} && -f ${out}/.config ]]; then
-	if echo "${defconfsha} arch/${arch}/configs/${device}_defconfig"|sha1sum -c --quiet; then fmsg "Skipping generate config"; else lsconfigs; exit 1; fi
+if [[ -f ${out}/.config ]]; then
+	if echo "${defconfsha} arch/${arch}/configs/${device}_defconfig"|sha1sum -c --quiet; then
+		fmsg "Skipping generate config"
+    fi
 else
 	if make O="${out}" "${device}"_defconfig 2> >(tee .errors >&2); then
 		fmsg "make ${device}_defconfig succeeded."
+		shasum arch/"${arch}"/configs/"${device}"_defconfig > "${out}"/defconfsha
 	else
 		fdie "make ${device}_defconfig failed."
 		greplog
 		exit 1
 	fi
-	shasum arch/"${arch}"/configs/"${device}"_defconfig > "${tmp}"/defconfsha
 fi
 run_build "${img}" 2> >(tee -a .errors >&2)
 fmsg "Building DTBs"
@@ -250,12 +255,20 @@ if find "${out}"/modinstall/ -name '*.ko' -type f -exec cp '{}' "${ak3}/modules/
 else
 	ferr "No modules found!"
 fi
+fmsg "Finding DTBs"
+if find "${out}"/arch/${arch}/boot/dts/ -name '*.dtb' -type f -exec cp '{}' "${ak3}/" \; ; then
+	fmsg "DTBs found"
+else
+	ferr "No DTBs found!"
+fi
 fmsg "Creating Flashable Zip"
 cp  "${out}"/arch/${arch}/boot/${img} "${ak3}"
-cp  "${out}"/arch/${arch}/boot/dts/qcom/*"${device}"*.dtb "${ak3}"
+#cp  "${out}"/arch/${arch}/boot/dts/qcom/*"${device}"*.dtb "${ak3}"
 cd "${ak3}"
 if zip -r9 "${final}" ./* -x .git README.md *placeholder > /dev/null; then
 	fmsg "Flashable Zip Created"
+    cp "${final}" "${kernels}"
+    fmsg "Kernel zip copied to ${kernels}"
 else
 	fdie "Zip Creation Failed"
 	exit 1
