@@ -19,26 +19,26 @@ read -rsp $'\e[1;92m:: Enter sudo Password:\e[0m ' PASSWORD
 asudo="echo $PASSWORD | sudo -S"
 HOME="/home/$USER"
 TMP="$HOME/.tmp"
-ANDROID_DIR="$HOME/android"
+ANDROID_DIR="$HOME/Android"
 FAKEROOT="fakeroot_1.36.orig.tar.gz"
-FR_URL="https://ftp.debian.org/debian/pool/main/f/fakeroot/$FAKEROOT"
+FR_URL="https://ftp.debian.org/debian/pool/main/f/fakeroot/"$FAKEROOT""
 FR_DIR="$TMP/fakeroot"
-mkdir -p $TMP
-mkdir -p $ANDROID_DIR
-#mkdir -p $FR_DIR
-if [ -f $TMP/count1 ]; then
+mkdir -p "$TMP"
+mkdir -p "$ANDROID_DIR"
+#mkdir -p "$FR_DIR"
+if [ -f "$TMP"/count1 ]; then
     msg "Setup already ran before."
     msg "You may need to run some commands manually"
     msg "if the script did not succeed."
     sleep 1
 fi
-cd $HOME || exit 1
+cd "$HOME" || exit 1
 msg "Arch Linux Arm setup"
 sleep 1
-if [ ! -f $TMP/count1 ]; then
+if [ ! -f "$TMP"/count1 ]; then
     msg "Checking prerequisites..."
     pkgs=$(cat ~/build_tools/termux-arch-setup/tArch-pkgs.txt)
-    if [ -f $TMP/count1 ]; then
+    if [ -f "$TMP"/count1 ]; then
 	for pkg in $pkgs; do
             pacman -Qi "${pkg}" &>/dev/null || {
                 msg "Installing ${cyn}${pkg}${rst}"
@@ -48,15 +48,15 @@ if [ ! -f $TMP/count1 ]; then
     else
 	    echo $pkgs | xargs asudo pacman -S --needed --noconfirm
     fi
-	touch $TMP/count1
+	touch "$TMP"/count1
 fi
 msg "Packages up-to-date."
-#if [ ! -f $TMP/count2 ]; then
-#    cd $TMP || exit 1 
+#if [ ! -f "$TMP"/count2 ]; then
+#    cd "$TMP" || exit 1 
 #    msg "Making fakeroot package..."
-#    wget -q $FR_URL
-#    tar xf $FAKEROOT -C $FR_DIR --strip-components=1
-#    cd $FR_DIR || die "Fakeroot source failed to download! Aborting."
+#    wget -q "$FR_URL"
+#    tar xf "$FAKEROOT" -C "$FR_DIR" --strip-components=1
+#    cd "$FR_DIR" || die "Fakeroot source failed to download! Aborting."
 #    ./bootstrap
 #    ./configure --prefix=/usr \
 #        --libdir=/opt/fakeroot/libs \
@@ -65,19 +65,19 @@ msg "Packages up-to-date."
 #    make -j"$t" 
 #    msg "Fakeroot package ready. Installing..." 
 #    asudo make install
-#    touch $TMP/count2
+#    touch "$TMP"/count2
 #fi
 #msg "Fakeroot installed."
 sleep 1
-cd $HOME || exit 1
+cd "$HOME"
 read -rp $'\e[1;92m:: Do you want to sync a project?\e[0m ' ifsync
 if [[ "${ifsync,,}" =~ ^(y|yes)$ ]]; then
     until [[ "${dosync,,}" =~ ^(n|no)$ ]]; do
         until [[ "${yn,,}" =~ ^(y|yes)$ ]]; do
-            if [ ! -d $ANDROID_DIR ]; then
-			mkdir -p $ANDROID_DIR
+            if [ ! -d "$ANDROID_DIR" ]; then
+			mkdir -p "$ANDROID_DIR"
 			fi
-			cd $ANDROID_DIR
+			cd "$ANDROID_DIR"
             manifest=
             read -rp $'\e[1;92m:: Username/Repo:\e[0m ' url
             read -rp $'\e[1;92m:: Repo Branch:\e[0m ' branch
@@ -87,7 +87,7 @@ if [[ "${ifsync,,}" =~ ^(y|yes)$ ]]; then
             echo ""
             read -rp $'\e[1;92m:: Is this correct?\e[0m ' yn
         done
-        mkdir "$folder" && cd "$folder" || exit 1
+        mkdir -p "$folder" && cd "$folder" || die "ERROR"
         if [[ "${shallow,,}" =~ ^(y|yes)$ ]]; then
             repo init -u git://github.com/"$url" -b "$branch" --depth=1 --groups=all,-notdefault,-device,-darwin,-x86,-mips,-exynos5,mako || {
                 die "Init failed!"
@@ -107,26 +107,26 @@ if [[ "${ifsync,,}" =~ ^(y|yes)$ ]]; then
         read -rp $'\e[1;92m:: Do you want to sync another project?\e[0m ' dosync
     done
 fi
-read -rp $'\e[1;92m:: Do you want to clone a repo?\e[0m ' ifclone
+cd "$HOME"
+read -rp $'\e[1;92m:: Do you want to clone a separate repo?\e[0m ' ifclone
 if [[ "${ifclone,,}" =~ ^(y|yes)$ ]]; then
     until [[ "${doclone,,}" =~ ^(n|no)$ ]]; do
-		if [ ! -d $ANDROID_DIR ]; then; mkdir -p $ANDROID_DIR; fi
-        cd $ANDROID_DIR
         until [[ "${yn,,}" =~ ^(y|yes)$ ]]; do
             read -rp $'\e[1;92m:: Username/Repo:\e[0m ' url
             read -rp $'\e[1;92m:: Repo branch:\e[0m ' branch
-            read -rp $'\e[1;92m:: Project Folder:\e[0m ' folder
+            read -rp $'\e[1;92m:: Local Folder Location [$HOME/Folder(s)]:\e[0m ' folder
             read -rp $'\e[1;92m:: Clone submodules? (ENTER if unsure)\e[0m ' subs
             read -rp $'\e[1;92m:: Is this correct?\e[0m ' yn
         done
+		mkdir -p "$HOME"/"$folder"
         if [[ "${subs,,}" =~ ^(y|yes)$ ]]; then
-            git clone --recurse-submodules -j"$t" -b "$branch" https://github.com/"$url" $ANDROID_DIR/"$folder"
+            git clone --recurse-submodules -j"$t" -b "$branch" https://github.com/"$url" "$HOME"/"$folder"
         else
-            git clone -j"$t" -b "$branch" https://github.com/"$url" $ANDROID_DIR/"$folder"
+            git clone -j"$t" -b "$branch" https://github.com/"$url" "$HOME"/"$folder"
         fi
         read -rp $'\e[1;92m:: Do you want to clone another repo?\e[0m ' doclone
     done
 fi
 msg "Setup Complete!"
 msg "Enjoy!"
-rm -rf $TMP
+rm -rf "$TMP"
