@@ -114,11 +114,13 @@ if [[ "${ifclone,,}" =~ ^(y|yes)$ ]]; then
         until [[ "${yn,,}" =~ ^(y|yes)$ ]]; do
             read -rp $'\e[1;92m:: Username/Repo:\e[0m ' url
             read -rp $'\e[1;92m:: Repo branch:\e[0m ' branch
-            read -rp $'\e[1;92m:: Local Folder Location [$HOME/Folder(s)]:\e[0m ' folder
+            read -rp $'\e[1;92m:: Local Folder Location [ENTER for default]:\e[0m ' folder
             read -rp $'\e[1;92m:: Clone submodules? (ENTER if unsure)\e[0m ' subs
             read -rp $'\e[1;92m:: Is this correct?\e[0m ' yn
         done
-		mkdir -p "$HOME"/"$folder"
+		if [ -n "$folder" ]; then
+			mkdir -p "$HOME"/"$folder"
+		fi
         if [[ "${subs,,}" =~ ^(y|yes)$ ]]; then
             git clone --recurse-submodules -j"$t" -b "$branch" https://github.com/"$url" "$HOME"/"$folder"
         else
