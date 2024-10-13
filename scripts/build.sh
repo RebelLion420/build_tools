@@ -4,8 +4,8 @@ set -o errexit -o pipefail
 # Build Personalization
 #
 kname=RebelKernel
-export KBUILD_BUILD_USER=RblLn
-export KBUILD_BUILD_HOST=lions_den
+export KBUILD_BUILD_USER=RBLLN
+export KBUILD_BUILD_HOST=DEN
 #
 # MEGA Folder Paths
 #

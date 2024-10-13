@@ -1,0 +1,11 @@
+bash-completion
+bsdtar
+busybox
+curl
+git
+hub
+openssh
+proot
+tergent
+tmux
+wget
