@@ -1,28 +1,28 @@
 #!/bin/bash
 set -o pipefail
-red="\e[1;91m"
-grn="\e[1;92m"
-cyn="\e[1;96m"
-rst="\e[0m"
+red='\e[1;91m'
+grn='\e[1;92m'
+cyn='\e[1;96m'
+rst='\e[0m'
 t=$(($(nproc --all) - 1))
-die () { echo -e "\n${red}:: $1 ${rst}  $?\n" ; exit 1 ; }
-msg () { echo -e "\n${grn}:: $1${rst}\n" ; }
+die () { echo -e '\n${red}:: $1 ${rst}  $?\n' ; exit 1 ; }
+msg () { echo -e '\n${grn}:: $1${rst}\n' ; }
 if [[ "${BASH_SOURCE[0]}" != "$(basename -- "$0")" ]]; then
-    echo -e "\n${red}Do not source this script!\n\nUsage:${rst} bash $(basename -- "$0")\n"
+    echo -e '\n${red}Do not source this script!\n\nUsage:${rst} bash $(basename -- "$0")\n'
     kill -INT $$
 fi
 echo ""
-read -rp $"\e[1;92m:: Enter Username:\e[0m " USER
+read -rp $'\e[1;92m:: Enter Username:\e[0m ' USER
 msg "NOTICE: Password is only stored in context of this script"
 sleep 2
-read -rsp $"\e[1;92m:: Enter sudo Password:\e[0m " PASSWORD
-asudo="echo $PASSWORD | sudo -S"
-HOME="/home/$USER"
-TMP="$HOME/.tmp"
-ANDROID_DIR="$HOME/android"
+read -rsp $'\e[1;92m:: Enter sudo Password:\e[0m ' PASSWORD
+asudo='echo $PASSWORD | sudo -S'
+HOME='/home/$USER'
+TMP='$HOME/.tmp'
+ANDROID_DIR='$HOME/android'
 FAKEROOT="fakeroot_1.36.orig.tar.gz"
-FR_URL="https://ftp.debian.org/debian/pool/main/f/fakeroot/${FAKEROOT}"
-FR_DIR="$TMP/fakeroot"
+FR_URL='https://ftp.debian.org/debian/pool/main/f/fakeroot/$FAKEROOT'
+FR_DIR='$TMP/fakeroot'
 mkdir -p $TMP
 mkdir -p $ANDROID_DIR
 #mkdir -p $FR_DIR
@@ -70,20 +70,20 @@ msg "Packages up-to-date."
 #msg "Fakeroot installed."
 wait 1
 cd $HOME || exit 1
-read -rp $"\e[1;92m:: Do you want to sync a project?\e[0m " ifsync
+read -rp $'\e[1;92m:: Do you want to sync a project?\e[0m ' ifsync
 if [[ "${ifsync,,}" =~ ^(y|yes)$ ]]; then
     until [[ "${dosync,,}" =~ ^(n|no)$ ]]; do
         until [[ "${yn,,}" =~ ^(y|yes)$ ]]; do
             if [ ! -d $ANDROID_DIR ]; then; mkdir -p $ANDROID_DIR; fi
 			cd $ANDROID_DIR
             manifest=
-            read -rp $"\e[1;92m:: Username/Repo:\e[0m " url
-            read -rp $"\e[1;92m:: Repo Branch:\e[0m " branch
-            read -rp $"\e[1;92m:: Project Folder:\e[0m " folder
-			read -rp $"\e[1;92m:: Shallow Clone? (ENTER if unsure)\e[0m " shallow
-            read -rp $"\e[1;92m:: Local Manifest? [User/Repo]: (ENTER if unsure)\e[0m " manifest
+            read -rp $'\e[1;92m:: Username/Repo:\e[0m ' url
+            read -rp $'\e[1;92m:: Repo Branch:\e[0m ' branch
+            read -rp $'\e[1;92m:: Project Folder:\e[0m ' folder
+			read -rp $'\e[1;92m:: Shallow Clone? (ENTER if unsure)\e[0m ' shallow
+            read -rp $'\e[1;92m:: Local Manifest? [User/Repo]: (ENTER if unsure)\e[0m ' manifest
             echo ""
-            read -rp $"\e[1;92m:: Is this correct?\e[0m " yn
+            read -rp $'\e[1;92m:: Is this correct?\e[0m ' yn
         done
         mkdir "$folder" && cd "$folder" || exit 1
         if [[ "${shallow,,}" =~ ^(y|yes)$ ]]; then
@@ -102,27 +102,27 @@ if [[ "${ifsync,,}" =~ ^(y|yes)$ ]]; then
             die "Sync aborted!"
             exit 1
         }
-        read -rp $"\e[1;92m:: Do you want to sync another project?\e[0m " dosync
+        read -rp $'\e[1;92m:: Do you want to sync another project?\e[0m ' dosync
     done
 fi
-read -rp $"\e[1;92m:: Do you want to clone a repo?\e[0m " ifclone
+read -rp $'\e[1;92m:: Do you want to clone a repo?\e[0m ' ifclone
 if [[ "${ifclone,,}" =~ ^(y|yes)$ ]]; then
     until [[ "${doclone,,}" =~ ^(n|no)$ ]]; do
 		if [ ! -d $ANDROID_DIR ]; then; mkdir -p $ANDROID_DIR; fi
         cd $ANDROID_DIR
         until [[ "${yn,,}" =~ ^(y|yes)$ ]]; do
-            read -rp $"\e[1;92m:: Username/Repo:\e[0m " url
-            read -rp $"\e[1;92m:: Repo branch:\e[0m " branch
-            read -rp $"\e[1;92m:: Project Folder:\e[0m " folder
-            read -rp $"\e[1;92m:: Clone submodules? (ENTER if unsure)\e[0m " subs
-            read -rp $"\e[1;92m:: Is this correct?\e[0m " yn
+            read -rp $'\e[1;92m:: Username/Repo:\e[0m ' url
+            read -rp $'\e[1;92m:: Repo branch:\e[0m ' branch
+            read -rp $'\e[1;92m:: Project Folder:\e[0m ' folder
+            read -rp $'\e[1;92m:: Clone submodules? (ENTER if unsure)\e[0m ' subs
+            read -rp $'\e[1;92m:: Is this correct?\e[0m ' yn
         done
         if [[ "${subs,,}" =~ ^(y|yes)$ ]]; then
             git clone --recurse-submodules -j"$t" -b "$branch" https://github.com/"$url" $ANDROID_DIR/"$folder"
         else
             git clone -j"$t" -b "$branch" https://github.com/"$url" $ANDROID_DIR/"$folder"
         fi
-        read -rp $"\e[1;92m:: Do you want to clone another repo?\e[0m " doclone
+        read -rp $'\e[1;92m:: Do you want to clone another repo?\e[0m ' doclone
     done
 fi
 msg "Setup Complete!"
