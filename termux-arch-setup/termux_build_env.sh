@@ -46,7 +46,7 @@ if [ ! -f "$TMP"/count1 ]; then
             }
         done
     else
-	    echo $pkgs | xargs asudo pacman -S --needed --noconfirm
+	    echo $pkgs | xargs "$asudo" pacman -S --needed --noconfirm
     fi
 	touch "$TMP"/count1
 fi
