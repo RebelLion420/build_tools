@@ -5,10 +5,10 @@ grn='\e[1;92m'
 cyn='\e[1;96m'
 rst='\e[0m'
 t=$(($(nproc --all) - 1))
-die () { echo -e '\n${red}:: $1 ${rst}  $?\n' ; exit 1 ; }
-msg () { echo -e '\n${grn}:: $1${rst}\n' ; }
+die () { echo -e "\n${red}:: $1 ${rst}  $?\n" ; exit 1 ; }
+msg () { echo -e "\n${grn}:: $1${rst}\n" ; }
 if [[ "${BASH_SOURCE[0]}" != "$(basename -- "$0")" ]]; then
-    echo -e '\n${red}Do not source this script!\n\nUsage:${rst} bash $(basename -- "$0")\n'
+    echo -e "\n${red}Do not source this script!\n\nUsage:${rst} bash $(basename -- "$0")\n"
     kill -INT $$
 fi
 echo ""
@@ -16,13 +16,13 @@ read -rp $'\e[1;92m:: Enter Username:\e[0m ' USER
 msg "NOTICE: Password is only stored in context of this script"
 sleep 2
 read -rsp $'\e[1;92m:: Enter sudo Password:\e[0m ' PASSWORD
-asudo='echo $PASSWORD | sudo -S'
-HOME='/home/$USER'
-TMP='$HOME/.tmp'
-ANDROID_DIR='$HOME/android'
+asudo="echo $PASSWORD | sudo -S"
+HOME="/home/$USER"
+TMP="$HOME/.tmp"
+ANDROID_DIR="$HOME/android"
 FAKEROOT="fakeroot_1.36.orig.tar.gz"
-FR_URL='https://ftp.debian.org/debian/pool/main/f/fakeroot/$FAKEROOT'
-FR_DIR='$TMP/fakeroot'
+FR_URL="https://ftp.debian.org/debian/pool/main/f/fakeroot/$FAKEROOT"
+FR_DIR="$TMP/fakeroot"
 mkdir -p $TMP
 mkdir -p $ANDROID_DIR
 #mkdir -p $FR_DIR
