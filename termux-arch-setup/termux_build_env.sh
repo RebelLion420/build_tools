@@ -34,7 +34,7 @@ msg "Arch Linux Arm setup"
 sleep 1
 if [ ! -f "$TMP"/count1 ]; then
     msg "Checking prerequisites..."
-    pkgs=$(cat ~/build_tools/termux-arch-setup/tArch-pkgs.txt)
+    pkgs=$(cat ~/tools/termux-arch-setup/tArch-pkgs.txt)
 	for pkg in $pkgs; do
 		pacman -Qi "${pkg}" &>/dev/null || {
 		msg "Installing ${cyn}${pkg}${rst}"
