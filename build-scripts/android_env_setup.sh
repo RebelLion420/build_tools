@@ -11,7 +11,6 @@ if [[ "${BASH_SOURCE[0]}" != "$(basename -- "$0")" ]]; then
     echo -e "\n${red}Do not source this script!\n\nUsage:${rst} bash $(basename -- "$0")\n"
     kill -INT $$
 fi
-#[[ $EUID -ne 0 ]] && echo "This script must be run as root." && exit 1
 echo ""
 read -rp $'\e[1;92m:: Enter user name:\e[0m ' USER
 HOME="/home/$USER"
@@ -29,7 +28,7 @@ fi
 if [ ! -d "$ANDROID_DIR"/scripts/setup ]; then
 	msg "Cloning setup scripts..."
 	mkdir "$ANDROID_DIR"/scripts
-	git clone https://github.com/RebelLion420/build_scripts "$ANDROID_DIR"/scripts
+	git clone https://github.com/akhilnarang/scripts "$ANDROID_DIR"/scripts
 fi
 msg "Setup scripts acquired"
 if [ ! -f "$TMP"/count1 ]; then
