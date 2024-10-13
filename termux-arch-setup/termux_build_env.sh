@@ -16,7 +16,7 @@ read -rp $'\e[1;92m:: Enter Username:\e[0m ' USER
 msg "NOTICE: Password is only stored in context of this script"
 sleep 2
 read -rsp $'\e[1;92m:: Enter sudo Password:\e[0m ' PASSWORD
-asudo="echo $PASSWORD | sudo -S"
+"$ASUDO"="$(echo "$PASSWORD" | sudo -S)"
 HOME="/home/$USER"
 TMP="$HOME/.tmp"
 ANDROID_DIR="$HOME/Android"
@@ -41,7 +41,7 @@ if [ ! -f "$TMP"/count1 ]; then
 	for pkg in $pkgs; do
 		pacman -Qi "${pkg}" &>/dev/null || {
 		msg "Installing ${cyn}${pkg}${rst}"
-		asudo pacman -S --needed --noconfirm "${pkg}"
+		"$ASUDO" pacman -S --needed --noconfirm "${pkg}"
 		}
 	done
 	touch "$TMP"/count1
@@ -60,7 +60,7 @@ msg "Packages up-to-date."
 #        --with-ipc=tcp
 #    make -j"$t" 
 #    msg "Fakeroot package ready. Installing..." 
-#    asudo make install
+#    "$ASUDO" make install
 #    touch "$TMP"/count2
 #fi
 #msg "Fakeroot installed."
