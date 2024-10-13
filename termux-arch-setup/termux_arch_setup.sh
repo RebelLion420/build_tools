@@ -6,15 +6,17 @@ cyn='\e[1;96m'
 rst='\e[0m'
 die () { echo -e "\n${red}:: $1 ${rst}  $?\n" ; exit 1 ; }
 msg () { echo -e "\n${grn}:: $1${rst}\n" ; }
-BASEDIR=$(pwd)
-pkg update -y
-yes|xargs -a $BASEDIR/termux-pkgs.txt || die "Failed to install packages! Make sure all packages in 'termux-pkgs.txt' are installed!"
+msg "Installing required packages..."
+pkg update
+pkg install bash-completion bsdtar busybox curl git hub openssh proot tergent tmux -y || die "Failed to install packages!"
+msg "Packages up-to-date"
+sleep 1
 msg "Allow Termux to access Android filesystem on next popup"
 sleep 3
 termux-setup-storage
 msg "Wait for Arch Linux install script to finish..."
 sleep 1
-wget https://raw.githubusercontent.com/SDRausty/termux-arch/master/setupTermuxArch.bash
+wget -nv https://raw.githubusercontent.com/SDRausty/termux-arch/master/setupTermuxArch.bash
 bash setupTermuxArch.bash || bash setupTermuxArch refresh || die "Error occured during Arch Linux install! Scroll up to check logs for more info"
 msg "'~/arch/startarch' to boot your new Linux environment!"
 exit 0

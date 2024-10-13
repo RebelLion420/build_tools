@@ -307,7 +307,7 @@ if command -v megaput >/dev/null 2>&1 || command -v megatools >/dev/null 2>&1 &&
 		fi
 	fi
 else
-	fdie "Final zip not found or megatools not installed. Abort!"
+	fdie "Final zip not found or megatools not installed."
 	exit 1
 fi
 exit 0
