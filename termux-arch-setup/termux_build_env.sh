@@ -68,13 +68,15 @@ msg "Packages up-to-date."
 #    touch $TMP/count2
 #fi
 #msg "Fakeroot installed."
-wait 1
+sleep 1
 cd $HOME || exit 1
 read -rp $'\e[1;92m:: Do you want to sync a project?\e[0m ' ifsync
 if [[ "${ifsync,,}" =~ ^(y|yes)$ ]]; then
     until [[ "${dosync,,}" =~ ^(n|no)$ ]]; do
         until [[ "${yn,,}" =~ ^(y|yes)$ ]]; do
-            if [ ! -d $ANDROID_DIR ]; then; mkdir -p $ANDROID_DIR; fi
+            if [ ! -d $ANDROID_DIR ]; then
+			mkdir -p $ANDROID_DIR
+			fi
 			cd $ANDROID_DIR
             manifest=
             read -rp $'\e[1;92m:: Username/Repo:\e[0m ' url
