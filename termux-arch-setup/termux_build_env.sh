@@ -38,16 +38,12 @@ sleep 1
 if [ ! -f "$TMP"/count1 ]; then
     msg "Checking prerequisites..."
     pkgs=$(cat ~/build_tools/termux-arch-setup/tArch-pkgs.txt)
-    if [ -f "$TMP"/count1 ]; then
 	for pkg in $pkgs; do
-            pacman -Qi "${pkg}" &>/dev/null || {
-                msg "Installing ${cyn}${pkg}${rst}"
-                asudo pacman -S --needed --noconfirm "${pkg}"
-            }
-        done
-    else
-	    echo $pkgs | xargs "$asudo" pacman -S --needed --noconfirm
-    fi
+		pacman -Qi "${pkg}" &>/dev/null || {
+		msg "Installing ${cyn}${pkg}${rst}"
+		asudo pacman -S --needed --noconfirm "${pkg}"
+		}
+	done
 	touch "$TMP"/count1
 fi
 msg "Packages up-to-date."
