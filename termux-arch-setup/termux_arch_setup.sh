@@ -17,6 +17,6 @@ termux-setup-storage
 msg "Wait for Arch Linux install script to finish..."
 sleep 1
 wget -nv https://raw.githubusercontent.com/SDRausty/termux-arch/master/setupTermuxArch.bash
-bash setupTermuxArch.bash || bash setupTermuxArch refresh || die "Error occured during Arch Linux install! Scroll up to check logs for more info"
+bash setupTermuxArch.bash || bash setupTermuxArch refresh
 msg "'~/arch/startarch' to boot your new Linux environment!"
 exit 0
