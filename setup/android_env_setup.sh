@@ -25,14 +25,8 @@ if [ -f "$TMP"/count* ]; then
     msg "if the script did not succeed."
     sleep 1
 fi
-if [ ! -d "$ANDROID_DIR"/scripts/setup ]; then
-	msg "Cloning setup scripts..."
-	mkdir "$ANDROID_DIR"/scripts
-	git clone https://github.com/akhilnarang/scripts "$ANDROID_DIR"/scripts
-fi
-msg "Setup scripts acquired"
 if [ ! -f "$TMP"/count1 ]; then
-	cd "$ANDROID_DIR"/scripts
+	cd "$ANDROID_DIR"/build_tools
 	msg "Setting up Android Build Environment..."
 	bash setup/arch-manjaro.sh || die "Arch-Manjaro" && exit 1
 	bash setup/install_android_sdk.sh || die "Android SDK" && exit 1

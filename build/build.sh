@@ -115,6 +115,7 @@ if [[ "${BASH_SOURCE[0]}" != "$(basename -- "${0}")" ]]; then
 	echo -e "\n${red}do not source this script!\n\nusage:${rst} bash $(basename -- "${0}")\n"
 	kill -INT ${$}
 fi
+trap 'echo; fdie "Manually aborted!"' SIGINT SIGTERM
 #
 # Arguments
 #
@@ -234,13 +235,18 @@ run_build modules 2> >(tee -a .errors_$date >&2)
 find ./ -name "*.ko" -exec ${CROSS_COMPILE}strip --strip-unneeded {} \;
 find ./ -name "*.ko" -exec "$out"/scripts/sign-file sha512 out/certs/signing_key.pem out/certs/signing_key.x509 {} \;
 echo ""
-printf "\n${top}\n${mid}\n${mid}%5s ${blinkcyn}%s${rst}\n${mid}\n${end}\n" "" "Build Process Complete"
+printf "\n${top}\n${mid}\n${mid}%5s ${blinkcyn}%s${rst}\n${mid}\n${end}\n" "" "Build Process Complete!"
 runtime
 #
 # End Build Process
 #
 # Sanity Check
 #
+if [[ ! -d "$ak3" ]]; then 
+    ferr "AK3 not found, no zip created"
+    fmsg "Check out/ folder for results"
+    exit 0
+fi
 for f in "$ak3"/*Image*; do
 [[ -e "$f" ]] && {
         rm -f "$ak3"/*Image*
