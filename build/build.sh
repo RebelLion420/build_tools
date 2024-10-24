@@ -4,23 +4,26 @@ set -o errexit -o pipefail
 # Build Personalization
 #
 kname=RebelKernel
-export KBUILD_BUILD_USER=RBLLN
-export KBUILD_BUILD_HOST=DEN
+export KBUILD_BUILD_USER=rebel
+export KBUILD_BUILD_HOST=pride
 #
 # MEGA Folder Paths
 #
 kern=/Root/RK
-kerntest=/Root/RK/Test
 kernbeta=/Root/RK/Beta
 kernrel=/Root/RK/Release
 #
-# Directories
+# Environment
 #
 kdir="$PWD"
 ak3="$kdir"/AK3
 out="$kdir"/out
 logs="$kdir/logs"
 kernels="$kdir"/../kernels
+tc="$kdir"/../toolchain
+cur_time=$(date +"%m%d%y-%H%M%S")
+logfile="build_${cur_time}.log"
+errors="errors_${cur_time}.txt"
 #
 # Colors
 #
@@ -65,20 +68,14 @@ usage() {
 	printf "\n\n%-2s${grn}%s${rst}\n" "" "Arguments:"
 	fvars "-a <arch>" "either 'arm' or 'arm64'"
 	fvars "-d <device>" "name of target device's defconfig"
-	fvars "-j <jobs>" "# threads, 'all' or blank for all available"
-	fvars "-t <type>" "'release', 'beta' or 'test' for uploading, or user preference"
-	fvars "-v <version>" "is preceded by 'v' (eg. 'v1.0')"
+	fvars "-j <jobs>" "# threads, 'all', or blank for auto"
+	fvars "-t <type>" "'release' or 'beta' for uploading, or user preference"
+	fvars "-v <version>"
 	echo ""
 }
 greplog() {
-	if [ -f .errors_* ]; then
-		grep -Ei 'error|fail|fatal|cannot' .errors_* >> .errorlog 
-#		awk '/error: /{flag=1} /cc1: /{flag=0} flag' .errors_* < .errorlog 
-		printf "${top}\n${mid}%s\n${mid}\n${end}\n\n" "$(sed -e 's/^/\	║	/' .errorlog)"
-        mv .errors_* "$logs"/ 
-    else
-		fdie "No log captured"
-	fi
+    grep -A2 -iE 'error:|crash|fail|failed|fatal|missing|not found| W | D | E ' ${logfile} &> ${errors}
+    printf "${top}\n${mid}%s\n${mid}\n${end}\n\n" "$(sed -e 's/^/\║    /' ${errors})"
 }
 runtime() {
 	endtime=$(date +%s)
@@ -98,14 +95,14 @@ lsconfigs() {
 }
 run_build() {
 	cmd="make ${1}"
-	make O="$out" makeflags="$flags" -j"$threads" "${@}"
+	make O="$out" makeflags="$flags" -j"$threads" "${@}" |& tee -a "$logfile"
 	if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
 		fdie "${cmd} failed, compilation terminated"
 		greplog
 		runtime
 		exit 1
 	else
-		fmsg "${cmd} succeeded."
+		fmsg "${cmd} successful"
 	fi
 }
 #
@@ -115,7 +112,6 @@ if [[ "${BASH_SOURCE[0]}" != "$(basename -- "${0}")" ]]; then
 	echo -e "\n${red}do not source this script!\n\nusage:${rst} bash $(basename -- "${0}")\n"
 	kill -INT ${$}
 fi
-trap 'echo; fdie "Manually aborted!"' SIGINT SIGTERM
 #
 # Arguments
 #
@@ -123,37 +119,34 @@ if [[ ${#} -lt 2 ]]; then
     usage
     exit 4
 fi
-arch="" device="" jobs=n type="" version=""
-while getopts a:d:j:t:v: OPT; do
-	case ${OPT} in
-		a) arch=${OPTARG} ;;
-		d) device=${OPTARG} ;;
-		j) jobs=${OPTARG} ;;
-		t) type=${OPTARG} ;;
-		v) version=${OPTARG} ;;
+arch="" device="" jobs="" type="" version=""
+while getopts a:d:j:t:v: flag
+do
+	case "${flag}" in
+		a) arch=${OPTARG};;
+		d) device=${OPTARG};;
+        j) jobs=${OPTARG};;
+        t) type=${OPTARG};;
+        v) version=${OPTARG};;
 		*) ;;
 	esac
 done
 shift $((OPTIND - 1))
 #
-# Consistency Checks
+# Checks
 #
-[[ -f "$kdir"/.errors ]] && rm -f "$kdir"/.errors_* "$kdir"/.errorlog
-[[ ! -d "$out" ]] && mkdir "$out"
-[[ ! -d "$HOME"/.local/tmp ]] && mkdir "$HOME"/.local/tmp
-[[ ! -d "$kernels" ]] && mkdir "$kernels"
+[[ -f $logfile || -f $errors ]] && rm $kdir/errors_*.log $kdir/build_*.txt
+[[ ! -d $out ]] && mkdir -p "$out"
+[[ ! -d $kernels ]] && mkdir "$kernels"
 #
-# Preconfigured Variables
+# Variables
 #
-tc="$kdir"/../toolchain
-date=$(date +"%m%d%y")
-tmp="$HOME"/.local/tmp
-if [ -z "$type" ] || [ -z "$kname" ]; then
-	final="${device}-kernel_${date}".zip
-elif [ -z "$type" ]; then
-	final="$kname-$device_$date".zip
-else
-	final="$kname-$device-$type-v$version_$date".zip
+if [[ -n $type && -n $version ]]; then
+	final="${kname}-${device}-${type}_${version}.zip"
+elif [[ -n $type && ! -n $version ]]; then
+	final="${kname}-${device}-${type}_${cur_time}.zip"
+elif [[ ! -n $type && ! -n $version ]]; then
+    final="${kname}-${device}_${cur_time}.zip"
 fi
 case "$arch" in
 	"arm")
@@ -180,22 +173,22 @@ case "$arch" in
 		;;
 esac
 if [[ "$jobs" == "all" ]]; then
-	threads=$(($(nproc --all) + 1))
-elif [[ "$jobs" == "n" ]]; then
-	threads=$(($(nproc --all) - 2))
-else
+	threads=$(nproc --all)
+elif [[ -n "$jobs" ]]; then
 	threads="$jobs"
+else
+	threads=$(($(nproc --all) - 2))
 fi
 export SUBARCH="$arch"
 export DEVICE="$device"
-gccv=$("$CROSS_COMPILE"gcc -v 2>&1 | tail -1 | cut -d ' ' -f 3)
 # Ccache
 if command -v ccache >/dev/null 2>&1; then
-	export CCACHE_SLOPPINESS=file_macro,locale,time_macros,pch_defines
+	export CCACHE_SLOPPINESS=pch_defines,file_macro,locale,time_macros
 	export CFLAGS="-fpch-preprocess"
 	export CPPFLAGS="-fpch-preprocess"
-    export PATH="/usr/lib/ccache/bin/:$PATH"
+    export CROSS_COMPILE="ccache ${CROSS_COMPILE}"
 fi
+gccv=$(${CROSS_COMPILE}gcc -v 2>&1 | tail -1 | cut -d ' ' -f 3)
 # Checksum
 [[ -f "$out"/defconfsha ]] && defconfsha=$(awk '{print $1}' "$out"/defconfsha)
 #
@@ -206,9 +199,10 @@ printf "\n%s" "$top"
 fargs "ARCHITECTURE:" "$arch"
 fargs "DEVICE:" "$device"
 fargs "THREADS:" "$threads"
-[ ! -z "$type" ] && fargs "TYPE:" "$type"
-[ ! -z "$version" ] && fargs "VERSION:" "$version"
+[ -n "$type" ] && fargs "TYPE:" "$type"
+[ -n "$version" ] && fargs "VERSION:" "$version"
 fargs "GCC VERSION:" "$gccv"
+fargs "TOOLCHAIN:" "$CROSS_COMPILE"
 printf "\n%s\n" "${mid}${rst}"
 printf "${mid}%5s${grn}%-25s ${cyn}%s\n${end}\n${rst}" "" "Build script by " "RebelLion420"
 sleep 1
@@ -218,33 +212,34 @@ if [[ -f "$out"/.config ]]; then
 		fmsg "Skipping generate config"
     fi
 else
-	if make O="$out" "$device"_defconfig 2> >(tee .errors_$date >&2); then
-		fmsg "make ${device}_defconfig succeeded."
+	if make O="$out" "$device"_defconfig |& tee -a "$logfile"; then
+		fmsg "make ${device}_defconfig successful"
 		shasum arch/"$arch"/configs/"$device"_defconfig > "$out"/defconfsha
 	else
-		fdie "make ${device}_defconfig failed."
+		fdie "make ${device}_defconfig failed!"
 		greplog
 		exit 1
 	fi
 fi
-run_build "$img" 2> >(tee -a .errors_$date >&2)
+run_build "$img"
 fmsg "Building DTBs"
-run_build dtbs 2> >(tee -a .errors_$date >&2)
+run_build dtbs
 fmsg "Building Modules"
-run_build modules 2> >(tee -a .errors_$date >&2)
+run_build modules
 find ./ -name "*.ko" -exec ${CROSS_COMPILE}strip --strip-unneeded {} \;
-find ./ -name "*.ko" -exec "$out"/scripts/sign-file sha512 out/certs/signing_key.pem out/certs/signing_key.x509 {} \;
+#find ./ -name "*.ko" -exec "$out"/scripts/sign-file sha512 out/certs/signing_key.pem out/certs/signing_key.x509 {} \;
 echo ""
 printf "\n${top}\n${mid}\n${mid}%5s ${blinkcyn}%s${rst}\n${mid}\n${end}\n" "" "Build Process Complete!"
 runtime
+greplog
 #
 # End Build Process
 #
 # Sanity Check
 #
-if [[ ! -d "$ak3" ]]; then 
+if [[ ! -d $ak3 ]]; then 
     ferr "AK3 not found, no zip created"
-    fmsg "Check out/ folder for results"
+    ferr "Check out/ folder for results"
     exit 0
 fi
 for f in "$ak3"/*Image*; do
@@ -252,32 +247,30 @@ for f in "$ak3"/*Image*; do
         rm -f "$ak3"/*Image*
         rm -f "$ak3"/*.zip
         rm -f "$ak3"/*.dtb
-        rm -rf "$ak3"/modules/system/lib/modules/
+        rm -f "$ak3"/modules/system/lib/modules/*.ko
 }
 done
 #
 # Zip Process
 #
-fmsg "Finding Modules"
-if find ./ -name "*.ko" -exec cp '{}' "${ak3}/modules/system/lib/modules/" \; ; then
+fmsg "Checking for files"
+if find out/ -name "*.ko" -exec cp '{}' "${ak3}/modules/system/lib/modules/" \; ; then
 	fmsg "Modules found"
 else
 	ferr "No modules found!"
 fi
-fmsg "Finding DTBs"
 if find "$out"/arch/"$arch"/boot/dts/ -name '*.dtb' -type f -exec cp '{}' "$ak3/" \; ; then
 	fmsg "DTBs found"
 else
 	ferr "No DTBs found!"
 fi
 fmsg "Creating Flashable Zip"
-cp  "$out"/arch/"$arch"/boot/"$img" "$ak3"
-#cp  "${out}"/arch/${arch}/boot/dts/qcom/*"${device}"*.dtb "${ak3}"
-cd "$ak3"
-if zip -r9 "$final" ./* -x .git README.md *placeholder > /dev/null; then
-	fmsg "Flashable Zip Created"
-    cp "$final" "$kernels"
-    fmsg "Kernel zip copied to ${kernels}"
+cp  $out/arch/$arch/boot/$img $ak3
+cd $ak3
+if zip -r9 $final ./* -x .git README.md *placeholder > /dev/null; then
+	fmsg "Zip Created"
+    cp $final $kernels
+    fmsg "$final copied to $kernels"
 else
 	fdie "Zip Creation Failed"
 	exit 1
@@ -291,10 +284,6 @@ if command -v megaput >/dev/null 2>&1 || command -v megatools >/dev/null 2>&1 &&
 	if [ "${ul,,}" == "y" ]; then
 		fmsg "Uploading kernel zip to MEGA"
 		case "$type" in
-			"test*")
-				fmsg "${final} --> ${kerntest}"
-				megaput --path "$kerntest" "$final"
-				;;
 			"beta*")
 				fmsg "${final} --> ${kernbeta}"
 				megaput --path "$kernbeta" "$final"
